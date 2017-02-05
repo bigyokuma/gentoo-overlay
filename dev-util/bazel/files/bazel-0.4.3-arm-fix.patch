@@ -1,0 +1,23 @@
+diff -uprN bazel/scripts/bootstrap/compile.sh bazel-arm/scripts/bootstrap/compile.sh
+--- bazel/scripts/bootstrap/compile.sh	1980-01-01 00:00:00.000000000 +0900
++++ bazel-arm/scripts/bootstrap/compile.sh	2017-02-02 00:26:01.682937860 +0900
+@@ -136,7 +136,7 @@ function java_compilation() {
+ 
+   run "${JAVAC}" -classpath "${classpath}" -sourcepath "${sourcepath}" \
+       -d "${output}/classes" -source "$JAVA_VERSION" -target "$JAVA_VERSION" \
+-      -encoding UTF-8 "@${paramfile}"
++      -encoding UTF-8 "@${paramfile}" -J-Xmx500M
+ 
+   log "Extracting helper classes for $name..."
+   for f in ${library_jars} ; do
+diff -uprN bazel/tools/cpp/cc_configure.bzl bazel-arm/tools/cpp/cc_configure.bzl
+--- bazel/tools/cpp/cc_configure.bzl	1980-01-01 00:00:00.000000000 +0900
++++ bazel-arm/tools/cpp/cc_configure.bzl	2017-02-02 00:27:53.012937817 +0900
+@@ -131,6 +131,7 @@ def _cplus_include_paths(repository_ctx)
+ 
+ def _get_cpu_value(repository_ctx):
+   """Compute the cpu_value based on the OS name."""
++  return "arm"
+   os_name = repository_ctx.os.name.lower()
+   if os_name.startswith("mac os"):
+     return "darwin"
