@@ -1,0 +1,332 @@
+diff -uprN tensorflow-0.12.1/configure tensorflow-0.12.1-arm/configure
+--- tensorflow-0.12.1/configure	2016-12-25 22:44:34.000000000 +0900
++++ tensorflow-0.12.1-arm/configure	2017-02-06 22:40:00.092775492 +0900
+@@ -207,7 +207,7 @@ while true; do
+   if is_windows; then
+     CUDA_RT_LIB_PATH="lib/x64/cudart.lib"
+   elif [ "$OSNAME" == "Linux" ]; then
+-    CUDA_RT_LIB_PATH="lib64/libcudart.so${TF_CUDA_EXT}"
++    CUDA_RT_LIB_PATH="lib/libcudart.so${TF_CUDA_EXT}"
+   elif [ "$OSNAME" == "Darwin" ]; then
+     CUDA_RT_LIB_PATH="lib/libcudart${TF_CUDA_EXT}.dylib"
+   fi
+@@ -255,7 +255,7 @@ while true; do
+       cudnn_lib_path="${CUDNN_INSTALL_PATH}/lib/x64/cudnn.lib"
+       cudnn_alt_lib_path="${CUDNN_INSTALL_PATH}/lib/x64/cudnn.lib"
+     elif [ "$OSNAME" == "Linux" ]; then
+-      cudnn_lib_path="${CUDNN_INSTALL_PATH}/lib64/libcudnn.so"
++      cudnn_lib_path="${CUDNN_INSTALL_PATH}/lib/libcudnn.so"
+       cudnn_alt_lib_path="${CUDNN_INSTALL_PATH}/libcudnn.so"
+     elif [ "$OSNAME" == "Darwin" ]; then
+       cudnn_lib_path="${CUDNN_INSTALL_PATH}/lib/libcudnn.dylib"
+@@ -291,7 +291,7 @@ while true; do
+     CUDA_DNN_LIB_PATH="lib/x64/cudnn.lib"
+     CUDA_DNN_LIB_ALT_PATH="lib/x64/cudnn.lib"
+   elif [ "$OSNAME" == "Linux" ]; then
+-    CUDA_DNN_LIB_PATH="lib64/libcudnn.so${TF_CUDNN_EXT}"
++    CUDA_DNN_LIB_PATH="lib/libcudnn.so${TF_CUDNN_EXT}"
+     CUDA_DNN_LIB_ALT_PATH="libcudnn.so${TF_CUDNN_EXT}"
+   elif [ "$OSNAME" == "Darwin" ]; then
+     CUDA_DNN_LIB_PATH="lib/libcudnn${TF_CUDNN_EXT}"
+diff -uprN tensorflow-0.12.1/tensorflow/core/platform/default/build_config/BUILD tensorflow-0.12.1-arm/tensorflow/core/platform/default/build_config/BUILD
+--- tensorflow-0.12.1/tensorflow/core/platform/default/build_config/BUILD	2016-12-25 22:44:34.000000000 +0900
++++ tensorflow-0.12.1-arm/tensorflow/core/platform/default/build_config/BUILD	2017-02-06 22:40:00.102775492 +0900
+@@ -135,8 +135,8 @@ cc_library(
+             "-Wl,-rpath,../local_config_cuda/cuda/extras/CUPTI/lib",
+         ],
+         "//conditions:default": [
+-            "-Wl,-rpath,../local_config_cuda/cuda/lib64",
+-            "-Wl,-rpath,../local_config_cuda/cuda/extras/CUPTI/lib64",
++            "-Wl,-rpath,../local_config_cuda/cuda/lib",
++            "-Wl,-rpath,../local_config_cuda/cuda/extras/CUPTI/lib",
+         ],
+     }),
+     deps = [
+diff -uprN tensorflow-0.12.1/tensorflow/core/platform/default/platform.bzl tensorflow-0.12.1-arm/tensorflow/core/platform/default/platform.bzl
+--- tensorflow-0.12.1/tensorflow/core/platform/default/platform.bzl	2016-12-25 22:44:34.000000000 +0900
++++ tensorflow-0.12.1-arm/tensorflow/core/platform/default/platform.bzl	2017-02-06 22:40:00.102775492 +0900
+@@ -18,15 +18,15 @@ def cuda_library_path(name, version = cu
+       return "lib/lib{}.{}.dylib".format(name, version)
+   else:
+     if not version:
+-      return "lib64/lib{}.so".format(name)
++      return "lib/lib{}.so".format(name)
+     else:
+-      return "lib64/lib{}.so.{}".format(name, version)
++      return "lib/lib{}.so.{}".format(name, version)
+ 
+ def cuda_static_library_path(name):
+   if PLATFORM == "Darwin":
+     return "lib/lib{}_static.a".format(name)
+   else:
+-    return "lib64/lib{}_static.a".format(name)
++    return "lib/lib{}_static.a".format(name)
+ 
+ def cudnn_library_path(version = cudnn_sdk_version()):
+   if PLATFORM == "Darwin":
+@@ -36,9 +36,9 @@ def cudnn_library_path(version = cudnn_s
+       return "lib/libcudnn.{}.dylib".format(version)
+   else:
+     if not version:
+-      return "lib64/libcudnn.so"
++      return "lib/libcudnn.so"
+     else:
+-      return "lib64/libcudnn.so.{}".format(version)
++      return "lib/libcudnn.so.{}".format(version)
+ 
+ def cupti_library_path(version = cuda_sdk_version()):
+   if PLATFORM == "Darwin":
+@@ -48,9 +48,9 @@ def cupti_library_path(version = cuda_sd
+       return "extras/CUPTI/lib/libcupti.{}.dylib".format(version)
+   else:
+     if not version:
+-      return "extras/CUPTI/lib64/libcupti.so"
++      return "extras/CUPTI/lib/libcupti.so"
+     else:
+-      return "extras/CUPTI/lib64/libcupti.so.{}".format(version)
++      return "extras/CUPTI/lib/libcupti.so.{}".format(version)
+ 
+ def readlink_command():
+   if PLATFORM == "Darwin":
+diff -uprN tensorflow-0.12.1/tensorflow/core/platform/platform.h tensorflow-0.12.1-arm/tensorflow/core/platform/platform.h
+--- tensorflow-0.12.1/tensorflow/core/platform/platform.h	2016-12-25 22:44:34.000000000 +0900
++++ tensorflow-0.12.1-arm/tensorflow/core/platform/platform.h	2017-02-06 22:43:24.542775414 +0900
+@@ -43,10 +43,6 @@ limitations under the License.
+ #elif defined(__arm__)
+ #define PLATFORM_POSIX
+ 
+-// Since there's no macro for the Raspberry Pi, assume we're on a mobile
+-// platform if we're compiling for the ARM CPU.
+-#define IS_MOBILE_PLATFORM
+-
+ #else
+ // If no platform specified, use:
+ #define PLATFORM_POSIX
+diff -uprN tensorflow-0.12.1/tensorflow/g3doc/get_started/os_setup.md tensorflow-0.12.1-arm/tensorflow/g3doc/get_started/os_setup.md
+--- tensorflow-0.12.1/tensorflow/g3doc/get_started/os_setup.md	2016-12-25 22:44:34.000000000 +0900
++++ tensorflow-0.12.1-arm/tensorflow/g3doc/get_started/os_setup.md	2017-02-06 22:40:00.192775492 +0900
+@@ -515,7 +515,7 @@ variables.  Consider adding the commands
+ assume your CUDA installation is in `/usr/local/cuda`:
+ 
+ ```bash
+-export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/cuda/lib64:/usr/local/cuda/extras/CUPTI/lib64"
++export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/cuda/lib:/usr/local/cuda/extras/CUPTI/lib"
+ export CUDA_HOME=/usr/local/cuda
+ ```
+ 
+@@ -670,8 +670,8 @@ to reflect the cuDNN version you downloa
+ ``` bash
+ tar xvzf cudnn-8.0-linux-x64-v5.1-ga.tgz
+ sudo cp -P cuda/include/cudnn.h /usr/local/cuda/include
+-sudo cp -P cuda/lib64/libcudnn* /usr/local/cuda/lib64
+-sudo chmod a+r /usr/local/cuda/include/cudnn.h /usr/local/cuda/lib64/libcudnn*
++sudo cp -P cuda/lib/libcudnn* /usr/local/cuda/lib
++sudo chmod a+r /usr/local/cuda/include/cudnn.h /usr/local/cuda/lib/libcudnn*
+ ```
+ 
+ ##### Install other dependencies
+@@ -809,7 +809,7 @@ Setting up Cuda lib
+ Setting up Cuda bin
+ Setting up Cuda nvvm
+ Setting up CUPTI include
+-Setting up CUPTI lib64
++Setting up CUPTI lib
+ Configuration finished
+ ```
+ 
+diff -uprN tensorflow-0.12.1/tensorflow/g3doc/how_tos/adding_an_op/index.md tensorflow-0.12.1-arm/tensorflow/g3doc/how_tos/adding_an_op/index.md
+--- tensorflow-0.12.1/tensorflow/g3doc/how_tos/adding_an_op/index.md	2016-12-25 22:44:34.000000000 +0900
++++ tensorflow-0.12.1-arm/tensorflow/g3doc/how_tos/adding_an_op/index.md	2017-02-06 22:40:00.152775492 +0900
+@@ -1022,9 +1022,9 @@ cuda_op_kernel.cu.o -I $TF_INC -fPIC -lc
+ `cuda_op_kernel.so` produced above can be loaded as usual in Python, using the
+ `tf.load_op_library` function.
+ 
+-Note that if your CUDA libraries are not installed in `/usr/local/lib64`,
++Note that if your CUDA libraries are not installed in `/usr/local/lib`,
+ you'll need to specify the path explicitly in the second (g++) command above.
+-For example, add `-L /usr/local/cuda-8.0/lib64/` if your CUDA is installed in 
++For example, add `-L /usr/local/cuda-8.0/lib/` if your CUDA is installed in 
+ `/usr/local/cuda-8.0`.
+ 
+ ## Implement the gradient in Python
+diff -uprN tensorflow-0.12.1/tensorflow/stream_executor/dso_loader.cc tensorflow-0.12.1-arm/tensorflow/stream_executor/dso_loader.cc
+--- tensorflow-0.12.1/tensorflow/stream_executor/dso_loader.cc	2016-12-25 22:44:34.000000000 +0900
++++ tensorflow-0.12.1-arm/tensorflow/stream_executor/dso_loader.cc	2017-02-06 22:40:00.122775492 +0900
+@@ -162,7 +162,7 @@ static std::vector<string>* CreatePrimor
+ #if defined(__APPLE__)
+   rpaths->push_back("driver/driver_sh.runfiles/local_config_cuda/cuda/lib");
+ #else
+-  rpaths->push_back("driver/driver_sh.runfiles/local_config_cuda/cuda/lib64");
++  rpaths->push_back("driver/driver_sh.runfiles/local_config_cuda/cuda/lib");
+ #endif
+   return rpaths;
+ }
+@@ -218,7 +218,7 @@ static std::vector<string>* CreatePrimor
+ #if defined(__APPLE__)
+   return "external/local_config_cuda/cuda/lib";
+ #else
+-  return "external/local_config_cuda/cuda/lib64";
++  return "external/local_config_cuda/cuda/lib";
+ #endif
+ }
+ 
+@@ -228,7 +228,7 @@ static std::vector<string>* CreatePrimor
+ #elif defined(PLATFORM_WINDOWS)
+   return "";
+ #else
+-  return "external/local_config_cuda/cuda/driver/lib64";
++  return "external/local_config_cuda/cuda/driver/lib";
+ #endif
+ }
+ 
+@@ -236,7 +236,7 @@ static std::vector<string>* CreatePrimor
+ #if defined(__APPLE__)
+   return "external/local_config_cuda/cuda/extras/CUPTI/lib";
+ #else
+-  return "external/local_config_cuda/cuda/extras/CUPTI/lib64";
++  return "external/local_config_cuda/cuda/extras/CUPTI/lib";
+ #endif
+ }
+ 
+diff -uprN tensorflow-0.12.1/tensorflow/stream_executor/dso_loader.h tensorflow-0.12.1-arm/tensorflow/stream_executor/dso_loader.h
+--- tensorflow-0.12.1/tensorflow/stream_executor/dso_loader.h	2016-12-25 22:44:34.000000000 +0900
++++ tensorflow-0.12.1-arm/tensorflow/stream_executor/dso_loader.h	2017-02-06 22:40:00.112775492 +0900
+@@ -88,7 +88,7 @@ class DsoLoader {
+   // Arguments:
+   //   library_name: the filename in tree; e.g. libOpenCL.so.1.0.0
+   //   runfiles_relpath: where to look for the library relative to the runfiles
+-  //      root; e.g. third_party/gpus/cuda/lib64
++  //      root; e.g. third_party/gpus/cuda/lib
+   static string FindDsoPath(port::StringPiece library_name,
+                             port::StringPiece runfiles_relpath);
+ 
+diff -uprN tensorflow-0.12.1/tensorflow/tools/ci_build/Dockerfile.gpu tensorflow-0.12.1-arm/tensorflow/tools/ci_build/Dockerfile.gpu
+--- tensorflow-0.12.1/tensorflow/tools/ci_build/Dockerfile.gpu	2016-12-25 22:44:34.000000000 +0900
++++ tensorflow-0.12.1-arm/tensorflow/tools/ci_build/Dockerfile.gpu	2017-02-06 22:40:00.192775492 +0900
+@@ -15,7 +15,7 @@ RUN /install/install_bazel.sh
+ # Set up bazelrc.
+ COPY install/.bazelrc /root/.bazelrc
+ ENV BAZELRC /root/.bazelrc
+-ENV LD_LIBRARY_PATH /usr/local/cuda/extras/CUPTI/lib64:$LD_LIBRARY_PATH
++ENV LD_LIBRARY_PATH /usr/local/cuda/extras/CUPTI/lib:$LD_LIBRARY_PATH
+ 
+ # Configure the build for our CUDA configuration.
+ ENV TF_NEED_CUDA 1
+diff -uprN tensorflow-0.12.1/tensorflow/tools/ci_build/builds/test_user_ops.sh tensorflow-0.12.1-arm/tensorflow/tools/ci_build/builds/test_user_ops.sh
+--- tensorflow-0.12.1/tensorflow/tools/ci_build/builds/test_user_ops.sh	2016-12-25 22:44:34.000000000 +0900
++++ tensorflow-0.12.1-arm/tensorflow/tools/ci_build/builds/test_user_ops.sh	2017-02-06 22:40:00.202775492 +0900
+@@ -184,13 +184,13 @@ else
+       -I "${TF_INC}" -D GOOGLE_CUDA=1 -x cu -Xcompiler -fPIC || \
+       die "nvcc compilation of ${OP_KERNEL_CC} FAILED"
+ 
+-  CUDA_LIB_DIR="/usr/local/cuda/lib64"
++  CUDA_LIB_DIR="/usr/local/cuda/lib"
+   if [[ ! -d "${CUDA_LIB_DIR}" ]]; then
+     CUDA_LIB_DIR="/usr/local/cuda/lib"
+   fi
+   if [[ ! -d "${CUDA_LIB_DIR}" ]]; then
+     die "ERROR: Failed to find CUDA library directory at either of "
+-"/usr/local/cuda/lib and /usr/local/cuda/lib64"
++"/usr/local/cuda/lib and /usr/local/cuda/lib"
+   fi
+ 
+   echo "Found CUDA library diretory at: ${CUDA_LIB_DIR}"
+diff -uprN tensorflow-0.12.1/tensorflow/tools/docker/Dockerfile.devel-gpu tensorflow-0.12.1-arm/tensorflow/tools/docker/Dockerfile.devel-gpu
+--- tensorflow-0.12.1/tensorflow/tools/docker/Dockerfile.devel-gpu	2016-12-25 22:44:34.000000000 +0900
++++ tensorflow-0.12.1-arm/tensorflow/tools/docker/Dockerfile.devel-gpu	2017-02-06 22:40:00.202775492 +0900
+@@ -87,7 +87,7 @@ WORKDIR /tensorflow
+ 
+ # Configure the build for our CUDA configuration.
+ ENV CI_BUILD_PYTHON python
+-ENV LD_LIBRARY_PATH /usr/local/cuda/extras/CUPTI/lib64:$LD_LIBRARY_PATH
++ENV LD_LIBRARY_PATH /usr/local/cuda/extras/CUPTI/lib:$LD_LIBRARY_PATH
+ ENV TF_NEED_CUDA 1
+ ENV TF_CUDA_COMPUTE_CAPABILITIES=3.0,3.5,5.2
+ 
+diff -uprN tensorflow-0.12.1/third_party/gpus/cuda/platform.bzl.tpl tensorflow-0.12.1-arm/third_party/gpus/cuda/platform.bzl.tpl
+--- tensorflow-0.12.1/third_party/gpus/cuda/platform.bzl.tpl	2016-12-25 22:44:34.000000000 +0900
++++ tensorflow-0.12.1-arm/third_party/gpus/cuda/platform.bzl.tpl	2017-02-06 22:40:00.232775491 +0900
+@@ -21,9 +21,9 @@ def cuda_library_path(name, version = cu
+       return "lib/x64/{}{}.lib".format(name, version)
+   else:
+     if not version:
+-      return "lib64/lib{}.so".format(name)
++      return "lib/lib{}.so".format(name)
+     else:
+-      return "lib64/lib{}.so.{}".format(name, version)
++      return "lib/lib{}.so.{}".format(name, version)
+ 
+ def cuda_static_library_path(name):
+   if PLATFORM == "Darwin":
+@@ -31,7 +31,7 @@ def cuda_static_library_path(name):
+   elif PLATFORM == "Windows":
+     return "lib/x64/{}_static.lib".format(name)
+   else:
+-    return "lib64/lib{}_static.a".format(name)
++    return "lib/lib{}_static.a".format(name)
+ 
+ def cudnn_library_path(version = cudnn_sdk_version()):
+   if PLATFORM == "Darwin":
+@@ -46,9 +46,9 @@ def cudnn_library_path(version = cudnn_s
+       return "lib/x64/cudnn{}.lib".format(version)
+   else:
+     if not version:
+-      return "lib64/libcudnn.so"
++      return "lib/libcudnn.so"
+     else:
+-      return "lib64/libcudnn.so.{}".format(version)
++      return "lib/libcudnn.so.{}".format(version)
+ 
+ def cupti_library_path(version = cuda_sdk_version()):
+   if PLATFORM == "Darwin":
+@@ -63,9 +63,9 @@ def cupti_library_path(version = cuda_sd
+       return "extras/CUPTI/libx64/cupti{}.lib".format(version)
+   else:
+     if not version:
+-      return "extras/CUPTI/lib64/libcupti.so"
++      return "extras/CUPTI/lib/libcupti.so"
+     else:
+-      return "extras/CUPTI/lib64/libcupti.so.{}".format(version)
++      return "extras/CUPTI/lib/libcupti.so.{}".format(version)
+ 
+ def readlink_command():
+   if PLATFORM == "Darwin":
+diff -uprN tensorflow-0.12.1/third_party/gpus/cuda_configure.bzl tensorflow-0.12.1-arm/third_party/gpus/cuda_configure.bzl
+--- tensorflow-0.12.1/third_party/gpus/cuda_configure.bzl	2016-12-25 22:44:34.000000000 +0900
++++ tensorflow-0.12.1-arm/third_party/gpus/cuda_configure.bzl	2017-02-06 22:40:00.232775491 +0900
+@@ -212,15 +212,15 @@ def _cuda_symlink_files(cpu_value, cuda_
+   cudnn_ext = ".%s" % cudnn_version if cudnn_version else ""
+   if cpu_value == "Linux":
+     return struct(
+-        cuda_lib_path = "lib64",
+-        cuda_rt_lib = "lib64/libcudart.so%s" % cuda_ext,
+-        cuda_rt_lib_static = "lib64/libcudart_static.a",
+-        cuda_blas_lib = "lib64/libcublas.so%s" % cuda_ext,
+-        cuda_dnn_lib = "lib64/libcudnn.so%s" % cudnn_ext,
++        cuda_lib_path = "lib",
++        cuda_rt_lib = "lib/libcudart.so%s" % cuda_ext,
++        cuda_rt_lib_static = "lib/libcudart_static.a",
++        cuda_blas_lib = "lib/libcublas.so%s" % cuda_ext,
++        cuda_dnn_lib = "lib/libcudnn.so%s" % cudnn_ext,
+         cuda_dnn_lib_alt = "libcudnn.so%s" % cudnn_ext,
+-        cuda_rand_lib = "lib64/libcurand.so%s" % cuda_ext,
+-        cuda_fft_lib = "lib64/libcufft.so%s" % cuda_ext,
+-        cuda_cupti_lib = "extras/CUPTI/lib64/libcupti.so%s" % cuda_ext)
++        cuda_rand_lib = "lib/libcurand.so%s" % cuda_ext,
++        cuda_fft_lib = "lib/libcufft.so%s" % cuda_ext,
++        cuda_cupti_lib = "extras/CUPTI/lib/libcupti.so%s" % cuda_ext)
+   elif cpu_value == "Darwin":
+     return struct(
+         cuda_lib_path = "lib",
+diff -uprN tensorflow-0.12.1/third_party/sycl/crosstool/CROSSTOOL.tpl tensorflow-0.12.1-arm/third_party/sycl/crosstool/CROSSTOOL.tpl
+--- tensorflow-0.12.1/third_party/sycl/crosstool/CROSSTOOL.tpl	2016-12-25 22:44:34.000000000 +0900
++++ tensorflow-0.12.1-arm/third_party/sycl/crosstool/CROSSTOOL.tpl	2017-02-06 22:40:00.212775492 +0900
+@@ -43,7 +43,7 @@ toolchain {
+   # to be fixed, maybe with auto-detection?
+   cxx_builtin_include_directory: "/usr/lib/gcc/"
+   cxx_builtin_include_directory: "/usr/lib"
+-  cxx_builtin_include_directory: "/usr/lib64"
++  cxx_builtin_include_directory: "/usr/lib"
+   cxx_builtin_include_directory: "/usr/local/include"
+   cxx_builtin_include_directory: "/usr/include"
+ 
